@@ -53,15 +53,24 @@ userSchema.pre("save", function (next) {
   }
 });
 
-userSchema.methods.comparePassword = function (plainPassword, cd) {
-  // 들어온 plainPassword:1234567를 암호화해서 DB내의 password와 비교
+userSchema.methods.comparePassword = function (plainPassword, cb) {
+  //plainPassword 1234567    암호회된 비밀번호 $2b$10$l492vQ0M4s9YUBfwYkkaZOgWHExahjWC
   bcrypt.compare(plainPassword, this.password, function (err, isMatch) {
-    if (err) return cb(err), cb(null, isMatch);
+    if (err) return cb(err);
+    cb(null, isMatch);
   });
 };
 
 userSchema.methods.generateToken = function (cb) {
-  //
+  var user = this;
+  //jsonwebtoken을 이용해 token 생성
+  var token = jwt.sign(user._id.toHexString(), "secretToken"); //? user._id +'secretToken' = token
+  //'secretToken'으로 -> user._id를 알 수 있게됨
+  user.token = token;
+  user.save(function (err, user) {
+    if (err) return cb(err);
+    cb(null, user);
+  });
 };
 
 const User = mongoose.model("User", userSchema);
